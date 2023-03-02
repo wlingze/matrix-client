@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react";
 import Main from "./view/Main";
 import Login from "./view/Login";
+import ApiClient from "./matrix/ApiClient";
 
 interface AppState {
     startPage: ReactElement | undefined;
@@ -15,12 +16,11 @@ export default class App extends React.Component<AppProps, AppState> {
         this.state = { startPage: undefined }
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         console.log("component did mount");
 
-        // super.componentDidMount();
-        this.showMain()  // if has coockie 
-        this.showLogin() // if has't coockie
+        const credentials = await ApiClient.getStoredCredentials();
+        credentials ? this.showMain() : this.showLogin();
     }
 
     private showMain() {
@@ -34,7 +34,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     private showLogin() {
         const loginPage = (
-            <Login />
+            <Login showMainPage={this.showMain} />
         )
         console.log("set login is start page")
         this.setState({ startPage: loginPage })
