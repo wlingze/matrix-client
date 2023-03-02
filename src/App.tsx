@@ -34,7 +34,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     private showLogin() {
         const loginPage = (
-            <Login />
+            <Login showMainPage={this.showMain} />
         )
         console.log("set login is start page")
         this.setState({ startPage: loginPage })
