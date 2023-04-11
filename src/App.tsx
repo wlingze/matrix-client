@@ -19,8 +19,9 @@ export default class App extends React.Component<AppProps, AppState> {
     async componentDidMount() {
         console.log("component did mount");
 
-        const credentials = await ApiClient.getStoredCredentials();
-        credentials ? this.showMain() : this.showLogin();
+        const has_credentials = await ApiClient.getStoredCredentials();
+        // console.log("has credentials: ", has_credentials);
+        has_credentials ? this.showMain() : this.showLogin();
     }
 
     private showMain() {
@@ -34,7 +35,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     private showLogin() {
         const loginPage = (
-            <Login showMainPage={this.showMain} />
+            <Login />
         )
         console.log("set login is start page")
         this.setState({ startPage: loginPage })
