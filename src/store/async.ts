@@ -12,6 +12,7 @@ class AsyncStorage {
         }
         return Promise.resolve<void>(void 0);
     }
+
 }
 
 export default new AsyncStorage();
