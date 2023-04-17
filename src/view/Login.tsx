@@ -10,10 +10,9 @@ interface LoginProps {
 
 interface LoginState {
     register: boolean;
-    showerror: boolean;
     repeatPassword: string;
     userId: string | undefined;
-    error_content: string;
+    error_content: string | undefined;
 }
 
 export default class Login extends React.Component<LoginProps, LoginState> {
@@ -26,14 +25,13 @@ export default class Login extends React.Component<LoginProps, LoginState> {
         this.state = {
             repeatPassword: "",
             register: false,
-            showerror: false,
             userId: "",
-            error_content: "",
+            error_content: undefined,
         };
     }
 
     private handlerRequestError = (error: ErrorResponse) => {
-        console.log("handler error", error, this)
+        console.log("handler error", error)
         console.trace("traing")
         let error_content = ""
         if (typeof error.statusText == 'string') {
@@ -41,9 +39,10 @@ export default class Login extends React.Component<LoginProps, LoginState> {
         }
         if (error.statusCode == 400) {
             error_content = this.state.register ? "register" : "login" + " error, username or password error"
+        } else if (error.statusCode == 0) {
+            error_content = "network don't connect or server can't connect!"
         }
-        this.setState({ showerror: true, error_content })
-
+        this.setState({ error_content })
     }
 
     private onPressMainButton = async () => {
@@ -65,7 +64,7 @@ export default class Login extends React.Component<LoginProps, LoginState> {
 
             } else {
                 // password not same 
-                this.setState({ showerror: true, error_content: "please re-input password" })
+                this.setState({ error_content: "please re-input password" })
             }
         } else {
             // login 
@@ -112,8 +111,6 @@ export default class Login extends React.Component<LoginProps, LoginState> {
             </div>
         )
 
-
-
         const loginDialog = (
             <div>
                 {content}
@@ -134,7 +131,7 @@ export default class Login extends React.Component<LoginProps, LoginState> {
                     {this.state.error_content}
                 </div>
 
-                <button onClick={() => { this.setState({ showerror: false, error_content: "" }) }}>
+                <button onClick={() => { this.setState({ error_content: undefined }) }}>
                     Close
                 </button>
             </div>
@@ -142,7 +139,7 @@ export default class Login extends React.Component<LoginProps, LoginState> {
 
         const loginpage = (
             <div className="container">
-                {this.state.showerror ? loginError : loginDialog}
+                {this.state.error_content ? loginError : loginDialog}
             </div>
         )
 
