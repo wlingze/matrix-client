@@ -1,4 +1,4 @@
-import { Message } from "./Message"
+import { message } from "./Message"
 
 export interface LoginParam {
     username: String,
@@ -19,16 +19,18 @@ export interface RegisterResponse {
 
 
 export interface SendParam {
-    token: String,
-    message: Message
+    message: message
 }
 
 export interface RecvParam {
-    token: String,
     since: String,
 }
 
 export interface RecvResponse {
     next_since: String,
-    messages: Message[],
+    messages: message[],
+}
+
+export interface UserResponse {
+    users: String[]
 }
