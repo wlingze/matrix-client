@@ -1,6 +1,7 @@
 import { StoreBase, AutoSubscribeStore, autoSubscribeWithKey } from 'resub';
-import { Message, message } from '../models/Message';
-import ApiClient from '../matrix/ApiClient';
+import { message } from '../models/Message';
+import RestClient from '../matrix/RestClient';
+// import ApiClient from '../matrix/ApiClient';
 
 const usersTrigger = "usersTrigger";
 const messagesTrigger = "messageTrigger";
@@ -9,11 +10,12 @@ const messagesTrigger = "messageTrigger";
 class DataStore extends StoreBase {
     private users: string[] = [];
     private usersTrigger = usersTrigger;
-    private messages: Message[] = [];
+    private messages: message[] = [];
     private messagesTrigger = messagesTrigger;
 
+
     addUser(user: string) {
-        if (!this.users.includes(user) && user != ApiClient.user) {
+        if (!this.users.includes(user) && RestClient.user != user) {
             this.users = this.users.concat(user);
             this.trigger(this.usersTrigger)
         }
@@ -30,8 +32,8 @@ class DataStore extends StoreBase {
 
 
     addMessage(message: message) {
-        let data: Message = { message, hes_read: false }
-        this.messages = this.messages.concat(data);
+        console.log("set message", message);
+        this.messages = this.messages.concat(message);
         this.trigger(this.messagesTrigger)
     }
 
@@ -41,14 +43,9 @@ class DataStore extends StoreBase {
     }
 
     @autoSubscribeWithKey(messagesTrigger)
-    public getMessageDontRead() {
-        return this.messages.filter(message => !message.hes_read)
-    }
-
-    @autoSubscribeWithKey(messagesTrigger)
     public getMessageWithUser(user: string) {
         return this.messages.filter(message =>
-            (message.message.recv == user) || (message.message.send == user)
+            (message.recv == user) || (message.send == user)
         )
     }
 }

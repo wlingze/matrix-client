@@ -1,18 +1,19 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ToastContainer, ToastOptions, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import styled from "styled-components";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastOptions } from "react-toastify/dist/types";
 
 import RestClient from "../matrix/RestClient";
+import { RegisterResponse } from "../models/Api";
 import { ErrorResponse } from "../models/Error";
-import { LoginResponse } from "../models/Api";
 
-
-function Login() {
+function Register() {
     const [values, setValues] = useState({
         username: "",
         password: "",
+        confirmPassword: "",
     });
     const navigate = useNavigate();
 
@@ -24,13 +25,18 @@ function Login() {
         theme: "dark",
     };
 
+    useEffect(() => {
+        if (localStorage.getItem("chat-app-user")) {
+            navigate("/");
+        }
+    }, [navigate]);
 
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
         if (handleValidation()) {
-            const { username, password } = values;
-            RestClient.login(username, password)
-                .then((response: LoginResponse) => {
+            const { password, username } = values;
+            RestClient.register(username, password)
+                .then((response: RegisterResponse) => {
                     console.log("handler response");
 
                     localStorage.setItem("Credentials", JSON.stringify({
@@ -56,21 +62,23 @@ function Login() {
                     toast.error(message, toastOptions);
                 })
         }
-    }
+    };
 
     const handleValidation = () => {
-        const { username, password } = values;
-        if (password === "" || username === "") {
-            toast.error("UserName and password are require!", toastOptions)
-            return false
-        }
-        if (username.length < 4) {
-            toast.error("UserName at least four characters", toastOptions)
-            return false
-        }
-        return true
-    }
+        const { password, confirmPassword, username } = values;
 
+        if (password !== confirmPassword) {
+            toast.error("Passwords don't match", toastOptions);
+            return false;
+        } else if (username.length < 4) {
+            toast.error("Username should have at least 4 characters", toastOptions);
+            return false;
+        } else if (password.length < 8) {
+            toast.error("Password should have at least 8 characters", toastOptions);
+            return false;
+        }
+        return true;
+    };
 
     return (
         <>
@@ -79,32 +87,35 @@ function Login() {
                     <div className="brand">
                         <h1>chat</h1>
                     </div>
-
                     <input
                         type="text"
-                        placeholder="UserName"
+                        placeholder="Username"
                         name="username"
                         onChange={(e) => setValues({ ...values, username: e.target.value })}
-                    >
-                    </input>
-
+                    />
                     <input
                         type="password"
                         placeholder="Password"
                         name="password"
                         onChange={(e) => setValues({ ...values, password: e.target.value })}
                     />
-
-                    <button type="submit">Login</button>
-
+                    <input
+                        type="password"
+                        placeholder="Confirm password"
+                        name="confirmPassword"
+                        onChange={(e) =>
+                            setValues({ ...values, confirmPassword: e.target.value })
+                        }
+                    />
+                    <button type="submit">Create User</button>
                     <span>
-                        Dont' have an account? <Link to="/register">Register</Link>
+                        Already have an account? <Link to="/login">Login</Link>
                     </span>
                 </form>
-            </FormContainer >
+            </FormContainer>
             <ToastContainer />
         </>
-    )
+    );
 }
 
 const FormContainer = styled.div`
@@ -175,5 +186,4 @@ a {
 }
 `;
 
-
-export default Login
+export default Register;

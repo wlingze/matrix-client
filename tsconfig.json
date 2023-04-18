@@ -17,11 +17,11 @@
         "noImplicitAny": true,
         "skipLibCheck": true,
         "declaration": true,
-        "jsxFactory": "React",
+        // "jsxFactory": "React",
         "noResolve": false,
         "module": "es2015",
         "target": "es2015",
-        "jsx": "react",
+        "jsx": "react-jsx",
         "lib": [
             "es5",
             "es2015",

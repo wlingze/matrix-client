@@ -1,189 +1,107 @@
-import React, { ReactElement } from "react";
-import Sync from "../matrix/Sync";
-import UserList from "./UserList";
-import { Message } from "../models/Message";
-import ApiClient from "../matrix/ApiClient";
-import UnreadMessageList from "./UnreadMessageList";
-import Room from "./Room";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import styled from "styled-components";
 
-interface MainProps {
+import RestClient from "../matrix/RestClient";
+import Contacts from "../components/Contacts";
+import Welcome from "../components/Welcome";
+import ChatContainer from "../components/ChatContainer";
+import run from "../matrix/Sync";
+
+export interface Credentials {
+    user: string;
+    accessToken: string;
 }
+function Main() {
+    const [currentCredential, setCurrentCredential] = useState<Credentials>();
+    const [recvUser, setRecvUser] = useState<string>()
+    const navigate = useNavigate();
 
-interface MainState {
-    showRoomPage: boolean
-    showMessageList: boolean
-    showUserList: boolean
-    error_content: undefined | string
-}
-
-
-export default class Main extends React.Component<MainProps, MainState> {
-    private room?: ReactElement
-    private sync_thread?: NodeJS.Timer
-
-    constructor(props: MainProps) {
-        super(props);
-        this.state = {
-            showRoomPage: false,
-            showMessageList: false,
-            showUserList: false,
-            error_content: undefined
-        }
-        this.enable_sync()
-    }
-
-    private enable_sync = () => {
-        try {
-            // init data 
-            this.sync()
-
-            // set sync thread 
-            this.sync_thread = setInterval(this.sync, 2 * 60 * 1000)
-        } catch {
-
-        }
-    }
-
-    private async sync(): Promise<void> {
-        try {
-            return await Sync.start();
-        } catch (error) {
-            console.log("main sync error", error);
-
-            // handler error 
-            let error_content = "";
-            if (error.statusCode == 0) {
-                error_content = "network don't connect or server can't connect!";
-            } else if (typeof error.statusText == 'string') {
-                error_content = error.statusText
+    // set current user 
+    useEffect(() => {
+        const setUser = async () => {
+            const credential = localStorage.getItem("Credentials");
+            if (credential) {
+                setCurrentCredential(
+                    await JSON.parse(credential)
+                )
+            } else {
+                navigate("/login")
             }
-            this.setState({ error_content });
+        }
+        setUser();
+    }, [navigate])
 
-            // stop sync thread
-            if (this.sync_thread) {
-                clearInterval(this.sync_thread);
-                this.sync_thread = undefined;
+
+    useEffect(() => {
+        const getContacts = async () => {
+            if (currentCredential) {
+                RestClient.set_token(currentCredential)
+
+                run()
+                setInterval(run, 5 * 1000)
             }
-            return await Promise.reject(error);
-        }
-    }
+        };
+        getContacts();
+    }, [currentCredential])
 
-    private setRoomFromUser = (username: string) => {
-        this.setState({
-            showRoomPage: true,
-        });
-        this.room = (
-            <Room username={username} />
-        )
-    }
 
-    private setRoomFromMessage = (message: Message) => {
-        if (message.message.send == ApiClient.user) {
-            return this.setRoomFromUser(message.message.recv as string)
-        }
-        if (message.message.recv == ApiClient.user) {
-            return this.setRoomFromUser(message.message.send as string)
-        }
+    const handleChatChange = (username: string) => {
+        setRecvUser(username)
     }
 
 
-    render() {
-        let messagelistrow = (
-            <div>
-                <UnreadMessageList setroom={this.setRoomFromMessage} />
-            </div>
-        )
-        let userslistrow = (
-            <div>
-                <UserList setroom={this.setRoomFromUser} />
-            </div>
-        )
+    return (
+        <>
+            <Container>
+                <div className="container">
 
-        let list = (
-            <div>
-                <button onClick={() => {
-                    this.setState({ showMessageList: !this.state.showMessageList })
-                }}>
-                    unread message list
-                </button>
-                {this.state.showMessageList ? (
-                    messagelistrow
-                ) : (
-                    <p></p>
-                )}
+                    <Contacts
+                        currentUser={currentCredential?.user || ""}
+                        changeChat={handleChatChange}
+                    />
 
-                <button onClick={() => {
-                    this.setState({ showUserList: !this.state.showUserList })
-                }}>
-                    user list
-                </button>
-                {this.state.showUserList ? (
-                    userslistrow
-                ) : (
-                    <p></p>
-                )}
-            </div>
-        )
-
-
-        let roompage = (
-            <div>
-                <p>room page </p>
-                {this.state.showRoomPage ? this.room : null}
-            </div>
-        )
-
-        let sync_state = (
-            <div>
-                <p>{"user: " + ApiClient.user}</p>
-                <button onClick={() => {
-                    window.localStorage.clear()
-                    window.location.reload()
-                }}>
-                    logout
-                </button>
-                <div>
-                    {this.sync_thread ? (
-                        <p> sync runing...</p>
+                    {recvUser === undefined ? (
+                        <Welcome currentUsername={currentCredential?.user || ""} />
                     ) : (
-                        <div>
-                            <p>sync stop! please check your or services network</p>
-                            <button onClick={() => { this.enable_sync() }}>
-                                Click this to restart sync!
-                            </button>
-                        </div>
+                        <ChatContainer
+                            recvUser={recvUser}
+                            currentUser={currentCredential?.user || ""}
+                        />
                     )}
                 </div>
-            </div>
-        )
-
-        let mainpage = (
-            <div style={{ display: 'flex' }}>
-                <div style={{ flex: 1 }}>
-                    {sync_state}
-                    {list}
-                </div>
-                <div style={{ flex: 2 }}>
-                    {roompage}
-                </div>
-            </div >
-        )
-        let errorpage = (
-            <div>
-                <div>
-                    {this.state.error_content}
-                </div>
-
-                <button onClick={() => { this.setState({ error_content: undefined }) }}>
-                    Close
-                </button>
-            </div>
-        )
-
-        return (
-            <div>
-                {this.state.error_content ? errorpage : mainpage}
-            </div>
-        )
-    }
+            </Container>
+        </>
+    );
 }
+
+const Container = styled.div`
+height: -webkit-fill-available;
+width: 100vw;
+display: flex;
+flex-direction: column;
+justify-content: center;
+gap: 1rem;
+align-items: center;
+background-color: #0e0e11;
+.container {
+height: 100vh;
+width: 100vw;
+background-color: #00000076;
+display: grid;
+grid-template-columns: 20% 80%;
+
+@media screen and (min-width: 720px) {
+    grid-template-columns: 35% 65%;
+    grid-template-rows: none;
+    width: 85vw;
+    height: 100vh;
+}
+@media screen and (min-width: 1100px) {
+    grid-template-columns: 28% 72%;
+}
+}
+`;
+
+
+export default Main;

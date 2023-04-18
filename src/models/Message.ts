@@ -6,8 +6,3 @@ export interface message {
     timestamp: String,
 }
 
-
-export interface Message {
-    message: message
-    hes_read: boolean
-}
