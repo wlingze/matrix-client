@@ -4,6 +4,7 @@ import { message } from "../models/Message";
 import ChatInput from "./ChatInput";
 import { ErrorResponse } from "../models/Error";
 import MessageList from "../store/message";
+import Request from "../matrix/Request";
 import messageStore from "../store/message.store";
 
 interface ChatContainerProps {
@@ -36,7 +37,7 @@ const ChatContainer: React.FC<ChatContainerProps> = ({
             content: msg,
             timestamp: Date.now().toString(),
         };
-        data.addMessage(message)
+        messageStore.addSendMessage(message)
         Request.send(message)
             .catch((error: ErrorResponse) => {
                 console.log("rest send message ", error);

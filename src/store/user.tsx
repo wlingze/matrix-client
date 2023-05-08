@@ -1,5 +1,5 @@
-import data from "./data"
-import { ComponentBase } from 'resub';
+import { Component } from 'react';
+import userStore from './user.store';
 
 interface UserListProps {
     changeChat: (index: number, username: string) => void;
@@ -7,15 +7,26 @@ interface UserListProps {
 }
 
 interface UserListState {
-    users?: string[]
+    users: string[]
 }
 
-class UserList extends ComponentBase<UserListProps, UserListState> {
-    protected _buildState(_props: UserListProps, _initialBuild: boolean, _incomingState: Readonly<UserListState> | undefined): Partial<UserListState> | undefined {
-        return {
-            users: data.getUser()
-        }
+class UserList extends Component<UserListProps, UserListState> {
+    public state: UserListState = {
+        users: userStore.getUsers(),
     }
+    private subscribe_number = 0;
+
+    public componentDidMount(): void {
+        this.subscribe_number = userStore.subscribe(this.handlerStoreUpdate);
+    }
+
+    public componentWillUnmount(): void {
+        userStore.unsubscribe(this.subscribe_number);
+    }
+
+    private handlerStoreUpdate = () => {
+        this.setState({ users: userStore.getUsers() });
+    };
 
 
     render() {
