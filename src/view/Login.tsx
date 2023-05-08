@@ -4,9 +4,8 @@ import { ToastContainer, ToastOptions, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import styled from "styled-components";
 
-import RestClient from "../matrix/RestClient";
+import request from "../matrix/Request"
 import { ErrorResponse } from "../models/Error";
-import { LoginResponse } from "../models/Api";
 
 
 function Login() {
@@ -29,29 +28,27 @@ function Login() {
         event.preventDefault();
         if (handleValidation()) {
             const { username, password } = values;
-            RestClient.login(username, password)
-                .then((response: LoginResponse) => {
-                    console.log("handler response");
-
+            request.login(username, password)
+                .then((response) => {
                     localStorage.setItem("Credentials", JSON.stringify({
                         user: username,
-                        accessToken: response.token
+                        accessToken: response.data.token
                     }))
                     navigate("/")
                 })
-                .catch((error: ErrorResponse) => {
-                    console.log("handler error", error);
-
+                .catch((error) => {
+                    const response: ErrorResponse = error.response
                     let message = ""
-                    if (error.statusCode === 0) {
+                    if (response.status === 0) {
                         message = "please check your or server network"
-                    } else if (error.statusCode == 400) {
-                        // message = error.statusText
-                        if (error.statusText) {
-                            message = error.statusText
-                        } else {
-                            message = "Bad Request"
-                        }
+                    }
+                    // message = error.statusText
+                    if (response.data != "") {
+                        message = response.data
+                    } else if (response.statusText != "") {
+                        message = error.statusText
+                    } else {
+                        message = "Bad Request"
                     }
                     toast.error(message, toastOptions);
                 })

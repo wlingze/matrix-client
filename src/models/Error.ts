@@ -1,5 +1,6 @@
 
 export interface ErrorResponse {
-    statusCode: number;
-    statusText?: string;
+    status: number;
+    statusText: string;
+    data: string;
 }

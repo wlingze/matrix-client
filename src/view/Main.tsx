@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import styled from "styled-components";
 
-import RestClient from "../matrix/RestClient";
+import Request from "../matrix/Request";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
 import ChatContainer from "../components/ChatContainer";
@@ -19,14 +19,33 @@ function Main() {
 
     // set current user 
     useEffect(() => {
+        const clearup = () => {
+            localStorage.clear()
+            Request.clear_token()
+            navigate("/login")
+        }
         const setUser = async () => {
-            const credential = localStorage.getItem("Credentials");
-            if (credential) {
-                setCurrentCredential(
-                    await JSON.parse(credential)
-                )
-            } else {
-                navigate("/login")
+            const credential_string = localStorage.getItem("Credentials");
+
+            if (credential_string) {
+                const credential: Credentials = JSON.parse(credential_string)
+                // check token 
+                Request.set_token(credential)
+                Request.check_token(credential.user)
+                    .then((alive) => {
+                        console.log("then", alive, alive.data);
+                        if (alive.data) {
+                            console.log("setting ");
+
+                            setCurrentCredential(credential)
+                        } else {
+                            clearup()
+                        }
+                    }
+                    ).catch(() => {
+                        console.log("cache");
+                        clearup()
+                    })
             }
         }
         setUser();
@@ -36,10 +55,9 @@ function Main() {
     useEffect(() => {
         const getContacts = async () => {
             if (currentCredential) {
-                RestClient.set_token(currentCredential)
-
+                Request.set_token(currentCredential)
                 run()
-                setInterval(run, 5 * 1000)
+                setInterval(run, 1 * 1000)
             }
         };
         getContacts();

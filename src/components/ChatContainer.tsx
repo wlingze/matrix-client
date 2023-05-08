@@ -2,10 +2,9 @@ import React, { useEffect } from "react";
 import styled from "styled-components";
 import { message } from "../models/Message";
 import ChatInput from "./ChatInput";
-import RestClient from "../matrix/RestClient";
 import { ErrorResponse } from "../models/Error";
 import MessageList from "../store/message";
-import data from "../store/data";
+import messageStore from "../store/message.store";
 
 interface ChatContainerProps {
     recvUser: string;
@@ -38,7 +37,7 @@ const ChatContainer: React.FC<ChatContainerProps> = ({
             timestamp: Date.now().toString(),
         };
         data.addMessage(message)
-        RestClient.send(message)
+        Request.send(message)
             .catch((error: ErrorResponse) => {
                 console.log("rest send message ", error);
             })

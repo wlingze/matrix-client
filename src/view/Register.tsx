@@ -1,13 +1,12 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastOptions } from "react-toastify/dist/types";
 
-import RestClient from "../matrix/RestClient";
-import { RegisterResponse } from "../models/Api";
 import { ErrorResponse } from "../models/Error";
+import Request from "../matrix/Request";
 
 function Register() {
     const [values, setValues] = useState({
@@ -25,39 +24,34 @@ function Register() {
         theme: "dark",
     };
 
-    useEffect(() => {
-        if (localStorage.getItem("chat-app-user")) {
-            navigate("/");
-        }
-    }, [navigate]);
 
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
         if (handleValidation()) {
             const { password, username } = values;
-            RestClient.register(username, password)
-                .then((response: RegisterResponse) => {
+            Request.register(username, password)
+                .then((response) => {
                     console.log("handler response");
 
                     localStorage.setItem("Credentials", JSON.stringify({
                         user: username,
-                        accessToken: response.token
+                        accessToken: response.data.token
                     }))
                     navigate("/")
                 })
-                .catch((error: ErrorResponse) => {
-                    console.log("handler error", error);
-
+                .catch((error) => {
+                    const response: ErrorResponse = error.response
                     let message = ""
-                    if (error.statusCode === 0) {
+                    if (response.status === 0) {
                         message = "please check your or server network"
-                    } else if (error.statusCode == 400) {
-                        // message = error.statusText
-                        if (error.statusText) {
-                            message = error.statusText
-                        } else {
-                            message = "Bad Request"
-                        }
+                    }
+                    // message = error.statusText
+                    if (response.data != "") {
+                        message = response.data
+                    } else if (response.statusText != "") {
+                        message = error.statusText
+                    } else {
+                        message = "Bad Request"
                     }
                     toast.error(message, toastOptions);
                 })
